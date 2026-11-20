@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Acreditación</title>
+<!-- Generador de QR (se dibuja en el navegador, sin servicios externos) -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<style id="estilo-etiqueta"></style>
+<style>
+  :root {
+    --azul: #1f3a5f; --azul-2: #2d5487; --fondo: #f3f5f8; --tarjeta: #ffffff; --texto: #1d2330; --suave: #647085;
+    --borde: #d8dde6; --ok: #1b7f3b; --ok-bg: #e5f5ea; --warn: #9a6200; --warn-bg: #fff4dc; --err: #b3261e; --err-bg: #fde8e7;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: var(--fondo); color: var(--texto); font-size: 16px; }
+  button, input, select { font: inherit; }
+  .oculto { display: none !important; }
+
+  /* Ingreso */
+  #login { max-width: 420px; margin: 8vh auto; padding: 0 16px; }
+  .caja { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; padding: 20px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  label { display: block; font-size: 13px; color: var(--suave); margin: 14px 0 4px; }
+  input[type=text], input[type=password], input[type=email], input[type=number], input[type=tel], select {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--borde); border-radius: 8px; background: #fff; color: var(--texto);
+  }
+  .btn { border: 0; border-radius: 8px; padding: 11px 16px; background: var(--azul); color: #fff; cursor: pointer; font-weight: 600; }
+  .btn:hover { background: var(--azul-2); }
+  .btn.sec { background: #e7ebf2; color: var(--texto); }
+  .btn.peligro { background: var(--err); }
+  .btn.wa { background: #1c8f4a; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn.ancho { width: 100%; margin-top: 18px; }
+  .nota { font-size: 13px; color: var(--suave); }
+
+  /* Barra superior */
+  header { background: var(--azul); color: #fff; padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+  header .ev { font-weight: 700; flex: 1 1 200px; }
+  header .meta { font-size: 13px; opacity: .9; }
+  header button { background: rgba(255,255,255,.15); color: #fff; border: 0; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+  .barra { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; padding: 10px 16px; background: #fff; border-bottom: 1px solid var(--borde); }
+  .barra select { width: auto; min-width: 200px; max-width: 100%; font-weight: 600; }
+  .barra label { margin: 0; display: flex; gap: 6px; align-items: center; color: var(--texto); font-size: 14px; }
+  nav { display: flex; gap: 4px; padding: 8px 16px 0; overflow-x: auto; }
+  nav button { border: 0; background: transparent; padding: 10px 14px; border-radius: 8px 8px 0 0; cursor: pointer; color: var(--suave); font-weight: 600; white-space: nowrap; }
+  nav button.activo { background: #fff; color: var(--azul); }
+  main { padding: 0 16px 40px; }
+  .panel { background: #fff; border-radius: 0 12px 12px 12px; padding: 16px; max-width: 980px; }
+
+  /* Escanear */
+  .fila-busqueda { display: flex; gap: 8px; }
+  #q { font-size: 22px; padding: 14px; flex: 1; min-width: 0; letter-spacing: .5px; }
+  #camara { max-width: 420px; margin-top: 12px; }
+  .resultado { margin-top: 16px; border-radius: 12px; padding: 16px; border: 2px solid transparent; }
+  .resultado.ok { background: var(--ok-bg); border-color: var(--ok); }
+  .resultado.warn { background: var(--warn-bg); border-color: var(--warn); }
+  .resultado.err { background: var(--err-bg); border-color: var(--err); }
+  .resultado.info { background: #eef3fa; border-color: var(--azul-2); }
+  .resultado .estado { font-weight: 900; font-size: 19px; text-transform: uppercase; letter-spacing: .4px; line-height: 1.2; }
+  .resultado.ok .estado { color: var(--ok); } .resultado.warn .estado { color: var(--warn); } .resultado.err .estado { color: var(--err); }
+  .resultado.info .estado { color: var(--azul); }
+  .resultado .nombre { font-size: 30px; font-weight: 800; margin: 6px 0 2px; line-height: 1.15; }
+  .resultado .doc { font-family: "Courier New", monospace; font-size: 15px; font-weight: 700; color: var(--texto); }
+  .resultado .det { color: var(--suave); }
+  .resultado .acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: center; }
+  .chip { font-size: 12px; padding: 3px 8px; border-radius: 999px; background: #e7ebf2; }
+  .chip.si { background: var(--ok); color: #fff; }
+  .chip.cat { background: var(--azul); color: #fff; font-weight: 700; font-size: 13px; }
+  .chip.color { background: #fff; border: 1px solid var(--borde); font-weight: 700; font-size: 13px; }
+  .chip.frecuente { background: #6a4c93; color: #fff; }
+  .muestra { display: inline-block; width: 14px; height: 14px; border-radius: 4px; border: 1px solid rgba(0,0,0,.3); vertical-align: -2px; margin-right: 5px; }
+  .lista-res { margin-top: 12px; border: 1px solid var(--borde); border-radius: 10px; overflow: hidden; }
+  .lista-res button { display: block; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--borde); background: #fff; padding: 10px 14px; cursor: pointer; }
+  .lista-res button:hover { background: #f5f8fc; }
+  .lista-res button:last-child { border-bottom: 0; }
+  .historial { margin-top: 22px; font-size: 14px; }
+  .historial table { width: 100%; border-collapse: collapse; }
+  .historial td { padding: 6px 4px; border-bottom: 1px solid var(--borde); }
+  .punto { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+
+  /* Alertas grandes (para que el equipo no se equivoque) */
+  .alerta { margin-top: 10px; padding: 12px 14px; border-radius: 10px; font-weight: 800; font-size: 17px; line-height: 1.25; }
+  .alerta.roja { background: #b3261e; color: #fff; }
+  .alerta.ambar { background: #ffd54f; color: #3e2a00; }
+  .alerta.azul { background: var(--azul); color: #fff; }
+  .alerta.verde { background: var(--ok); color: #fff; }
+  .alerta.gris { background: #e3e7ed; color: #37474f; font-size: 15px; }
+  .alerta .sub { font-weight: 600; font-size: 14px; opacity: .92; margin-top: 4px; }
+  .alerta .btn { margin-top: 10px; display: inline-block; text-decoration: none; }
+  .alerta .grande { font-size: 30px; letter-spacing: 1px; }
+  .tallas { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .tallas button { min-width: 58px; padding: 12px 10px; font-size: 18px; font-weight: 800; border-radius: 8px; border: 2px solid #3e2a00; background: #fff; color: #3e2a00; cursor: pointer; }
+  .info-linea { margin-top: 8px; font-size: 14px; color: var(--texto); }
+
+  /* Secciones de la tarjeta */
+  .secciones { display: grid; gap: 10px; margin-top: 12px; }
+  .sec { background: rgba(255,255,255,.75); border: 1px solid var(--borde); border-radius: 10px; padding: 10px 12px; }
+  .sec h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--suave); margin: 0 0 8px; }
+  .celdas { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px; }
+  .celda { border-radius: 8px; padding: 7px 8px; font-size: 14px; border: 1px solid var(--borde); background: #fff; line-height: 1.2; }
+  .celda .ic { font-weight: 900; margin-right: 4px; }
+  .celda .h { display: block; font-size: 12px; color: var(--suave); margin-top: 2px; }
+  .celda.si { background: var(--ok-bg); border-color: #9ccfab; } .celda.si .ic { color: var(--ok); }
+  .celda.no { background: #f1f2f4; color: #8a93a3; } .celda.no .ic { color: var(--err); }
+  .celda.pd { background: #f6f7f9; color: #647085; border-style: dashed; }
+  .celda.actual { outline: 3px solid var(--azul); outline-offset: 1px; }
+  .dias { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+  .dias button { border: 1px solid var(--borde); background: #fff; border-radius: 999px; padding: 4px 10px; font-size: 13px; cursor: pointer; color: var(--texto); }
+  .dias button.activo { background: var(--azul); color: #fff; border-color: var(--azul); }
+  .linea { font-size: 15px; }
+  details.derechos { margin-top: 12px; background: #fff; border: 1px dashed var(--borde); border-radius: 10px; padding: 8px 12px; }
+  details.derechos summary { cursor: pointer; font-weight: 700; font-size: 14px; }
+  details.derechos label { display: flex; gap: 8px; align-items: center; margin: 8px 0; color: var(--texto); font-size: 15px; }
+
+  /* Formularios y panel */
+  .rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0 14px; }
+  .chips-sel { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips-sel label { display: flex; gap: 6px; align-items: center; margin: 0; padding: 7px 11px; border: 1px solid var(--borde); border-radius: 999px; color: var(--texto); font-size: 14px; background: #fff; }
+  .caja-modo { background: #eef3fa; border: 1px solid #c9d6ea; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+  .caja-pago { border: 1px solid #d6dbe3; border-radius: 10px; padding: 8px 12px; margin-top: 10px; }
+  .caja-pago summary { cursor: pointer; font-weight: 600; min-height: 32px; display: flex; align-items: center; }
+  .tarjetas { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+  .kpi { border: 1px solid var(--borde); border-radius: 10px; padding: 12px; }
+  .kpi .v { font-size: 28px; font-weight: 800; }
+  .kpi .l { font-size: 13px; color: var(--suave); }
+  .kpi .barra-p { height: 6px; background: #e7ebf2; border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  .kpi .barra-p div { height: 100%; background: var(--ok); }
+  table.t { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
+  table.t th, table.t td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--borde); }
+  table.t tr.grupo td { background: #f3f5f8; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--suave); }
+  .tabla-scroll { overflow-x: auto; }
+  h2 { font-size: 17px; margin: 22px 0 8px; }
+  h2:first-child { margin-top: 0; }
+  .vista-previa { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+  .vista-previa .et { outline: 1px dashed #9aa4b5; background: #fff; }
+
+  /* QR en pantalla */
+  #modal-qr { position: fixed; inset: 0; background: rgba(15,23,42,.72); z-index: 20; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  #modal-qr .caja-qr { background: #fff; color: #111; border-radius: 16px; padding: 20px; width: min(420px, 100%); text-align: center; }
+  #modal-qr .qr-grande { width: min(300px, 78vw); height: min(300px, 78vw); margin: 10px auto; }
+  #modal-qr .qr-grande svg { width: 100%; height: 100%; display: block; }
+  #modal-qr .qr-nombre { font-size: 22px; font-weight: 800; line-height: 1.2; }
+  #modal-qr .qr-id { font-family: "Courier New", monospace; font-size: 22px; font-weight: 700; letter-spacing: 2px; }
+  #aviso { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: #222; color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 14px; max-width: 90vw; z-index: 30; }
+
+  /* ─── Escarapela impresa desde Chrome ─── (las medidas en mm se inyectan desde la configuración) */
+  .et { position: relative; overflow: hidden; background: #fff; color: #000; font-family: Arial, Helvetica, sans-serif; }
+  .et > div { position: absolute; }
+  .et-txt { display: flex; flex-direction: column; justify-content: center; }
+  .et-evento { font-weight: 700; text-transform: uppercase; letter-spacing: .3px; margin-bottom: 1.5mm; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .et-nombre { font-weight: 800; line-height: 1.05; }
+  .et-apellido { font-weight: 700; line-height: 1.1; margin-top: .6mm; }
+  .et-inst { margin-top: 1.5mm; line-height: 1.15; }
+  .et-nombre, .et-apellido, .et-inst { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .et-qr svg { width: 100%; height: 100%; display: block; }
+  .et-id { text-align: center; font-family: "Courier New", monospace; font-weight: 700; letter-spacing: .5px; }
+  .et-tipo { background: #000; color: #fff; font-weight: 800; text-transform: uppercase; text-align: center; letter-spacing: 1px;
+             display: flex; align-items: center; justify-content: center; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .et.prueba { outline: .3mm solid #000; outline-offset: -.3mm; }
+
+  /* Aviso de escarapela y cola */
+  .aviso-esc { margin-top: 12px; padding: 12px 14px; border-radius: 10px; font-weight: 800; font-size: 18px; border: 2px dashed currentColor; }
+  .aviso-esc.entregar { color: #7a4d00; background: #fff1cc; }
+  .aviso-esc.imprimir { color: var(--err); background: #fff; }
+  .aviso-esc.tiene { color: var(--suave); background: #f4f6f9; font-size: 15px; border-style: solid; }
+  .aviso-esc .bandeja { display: inline-block; margin-left: 6px; padding: 2px 10px; border-radius: 6px; background: #7a4d00; color: #fff; }
+  .cola-item { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--borde); }
+  .grupo-color { border: 1px solid var(--borde); border-radius: 10px; padding: 10px 12px; margin-top: 12px; }
+  .grupo-color h3 { margin: 0 0 6px; font-size: 16px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+  .seccion { border: 1px solid var(--borde); border-radius: 10px; padding: 14px; margin-top: 14px; }
+
+  @media (max-width: 600px) {
+    .fila-busqueda { flex-wrap: wrap; }
+    #q { flex-basis: 100%; font-size: 18px; }
+    .fila-busqueda .btn { flex: 1; }
+    .resultado .nombre { font-size: 25px; }
+    .barra select { min-width: 0; width: 100%; }
+    main { padding: 0 8px 40px; }
+    .panel { padding: 12px; }
+  }
+  @media screen { #zona-impresion { display: none; } }
+  @media print {
+    html, body { background: #fff !important; }
+    body > *:not(#zona-impresion) { display: none !important; }
+    #zona-impresion { display: block; }
+    .et { page-break-after: always; break-after: page; }
+    .et:last-child { page-break-after: auto; break-after: auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═════════ INGRESO ═════════ -->
+<div id="login">
+  <div class="caja">
+    <h1>Acreditación de eventos</h1>
+    <div class="nota">UECP · Facultad de Ingeniería · Universidad Nacional de Colombia</div>
+    <div id="campo-api" class="oculto">
+      <label for="api">URL de la web app (termina en /exec)</label>
+      <input type="text" id="api" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off">
+    </div>
+    <label for="pin">PIN</label>
+    <input type="password" id="pin" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Letras y números">
+    <label for="estacion">Nombre de esta estación</label>
+    <input type="text" id="estacion" placeholder="Mesa 1, Kits, Almuerzo, Bus, Punto de registro…">
+    <button class="btn ancho" id="btn-entrar">Entrar</button>
+    <p class="nota" id="login-msg"></p>
+  </div>
+</div>
+
+<!-- ═════════ APLICACIÓN ═════════ -->
+<div id="app" class="oculto">
+  <header>
+    <div class="ev" id="h-evento"></div>
+    <div class="meta" id="h-meta"></div>
+    <button id="btn-salir">Salir</button>
+  </header>
+  <div class="barra">
+    <select id="sel-evento" aria-label="Evento"></select>
+    <select id="sel-estado" aria-label="Qué se registra en esta estación"></select>
+    <label title="Marque solo en el equipo que imprime escarapelas desde Chrome"><input type="checkbox" id="chk-imprime"> Imprime con Chrome</label>
+    <label><input type="checkbox" id="chk-sonido" checked> Sonido</label>
+  </div>
+  <nav>
+    <button data-tab="acreditar" class="activo">Escanear</button>
+    <button data-tab="nuevo">Registrar nuevo</button>
+    <button data-tab="cola">Cola de impresión <span id="n-cola"></span></button>
+    <button data-tab="panel" class="solo-admin">Panel</button>
+    <button data-tab="escarapelas" class="solo-admin">Escarapelas</button>
+  </nav>
+  <main>
+    <!-- Escanear -->
+    <section class="panel" id="tab-acreditar">
+      <div class="fila-busqueda">
+        <input type="text" id="q" placeholder="Escanee el QR o escriba nombre, documento o ID escarapela" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <button class="btn" id="btn-buscar">Buscar</button>
+        <button class="btn sec" id="btn-camara" title="Usar la cámara">📷</button>
+      </div>
+      <div id="camara" class="oculto"></div>
+      <div id="resultado"></div>
+      <div id="lista-res"></div>
+      <div class="historial">
+        <h2>Últimos registros en esta estación</h2>
+        <table id="historial"><tbody></tbody></table>
+      </div>
+    </section>
+
+    <!-- Registrar nuevo -->
+    <section class="panel oculto" id="tab-nuevo">
+      <div class="caja-modo">
+        <p class="nota" id="n-ayuda" style="margin:0"></p>
+      </div>
+      <form id="form-nuevo">
+        <div class="rejilla" id="campos-nuevo"></div>
+        <div id="bloque-cats"><label>Categorías</label><div class="chips-sel" id="n-cats"></div></div>
+        <details id="bloque-pago" class="caja-pago">
+          <summary>Datos de pago (opcional)</summary>
+          <div class="rejilla">
+            <div><label for="n-tarifa">Tarifa</label><select id="n-tarifa"></select></div>
+            <div><label for="n-valor">Valor pagado</label><input type="text" id="n-valor" inputmode="decimal" autocomplete="off" placeholder="350.000"></div>
+            <div><label for="n-moneda">Moneda</label><select id="n-moneda"></select></div>
+            <div><label for="n-medio">Medio de pago</label><select id="n-medio"></select></div>
+            <div><label for="n-comprobante">Número de comprobante</label><input type="text" id="n-comprobante" autocomplete="off"></div>
+          </div>
+        </details>
+        <div class="rejilla"><div><label for="n-talla">Talla del saco (opcional)</label><select id="n-talla"></select></div></div>
+        <label style="display:flex;gap:6px;align-items:center;color:var(--texto)"><input type="checkbox" id="chk-correo-nuevo" checked> Enviar correo con el QR</label>
+        <button class="btn" type="submit" id="btn-nuevo" style="margin-top:12px">Registrar</button>
+      </form>
+      <div id="resultado-nuevo"></div>
+    </section>
+
+    <!-- Cola de impresión -->
+    <section class="panel oculto" id="tab-cola">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <h2 style="margin:0">1 · Por imprimir <span id="n-por-imprimir" class="nota"></span></h2>
+        <button class="btn sec" id="btn-cola">Actualizar</button>
+      </div>
+      <p class="nota">Inscritos en sitio, tardíos y quien perdió su escarapela. Se actualiza cada 20 segundos. Descargue el Excel de un color (cada 5 a 10 personas), impórtelo en NIIMBOT con la plantilla .jcps e imprima: el sticker trae el QR y el <b>ID escarapela</b> (ej. AZU-012), que dice en qué escarapela de color se pega. Nadie sale en dos lotes.</p>
+      <div id="cola-res"></div>
+      <div id="cola-lista"></div>
+      <h2>2 · Impresos, por entregar <span id="n-por-entregar" class="nota"></span></h2>
+      <p class="nota">Stickers impresos en sitio que la persona aún no ha recogido. Al entregar la escarapela, pulse <b>Entregada</b>.</p>
+      <div id="entrega-lista"></div>
+    </section>
+
+    <!-- Panel -->
+    <section class="panel oculto" id="tab-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <h2 style="margin:0" id="panel-titulo">Asistencia en vivo</h2>
+        <div><span class="nota" id="panel-hora"></span> <button class="btn sec" id="btn-refrescar">Actualizar</button></div>
+      </div>
+      <div class="tarjetas" id="kpis" style="margin-top:12px"></div>
+      <h2>Estados (registrados / con derecho)</h2>
+      <div class="tabla-scroll"><table class="t" id="tabla-estados"></table></div>
+      <h2>Por categoría principal</h2>
+      <table class="t" id="tabla-tipos"></table>
+      <h2>Últimos movimientos de este evento</h2>
+      <div class="tabla-scroll"><table class="t" id="tabla-ultimos"></table></div>
+      <h2>Deshacer un registro</h2>
+      <div class="rejilla">
+        <div><label for="d-id">ID (QR)</label><input type="text" id="d-id"></div>
+        <div><label for="d-col">Columna</label><select id="d-col"></select></div>
+      </div>
+      <button class="btn peligro" id="btn-deshacer" style="margin-top:10px">Deshacer</button>
+      <p class="nota">El estado vuelve a "Pendiente" (o "No aplica" si no tiene derecho). La escarapela retrocede un paso (Entregada → Impresa → Pendiente). Todo queda en la hoja Registro.</p>
+    </section>
+
+    <!-- Escarapelas (coordinación) -->
+    <section class="panel oculto" id="tab-escarapelas">
+      <h2>1 · Stickers con NIIMBOT (antes del evento)</h2>
+      <p class="nota">Descarga un Excel con quienes <b>nunca se han impreso</b>, ordenado por color. <b>Codigo QR</b> es el texto del QR e <b>ID escarapela</b> (ej. AZU-012) el identificador corto que va debajo: sigla del color + número, para saber en qué escarapela se pega y buscar a la persona en el Excel si hay que escribir su nombre. Al generarlo, esas personas quedan con Escarapela = Impresa y un número de lote, así no se repiten.</p>
+      <div class="rejilla">
+        <div><label for="x-color">Color de escarapela</label><select id="x-color"></select></div>
+        <div><label for="x-cat">Categoría</label><select id="x-cat"></select></div>
+      </div>
+      <button class="btn" id="btn-exportar" style="margin-top:10px">Descargar Excel de stickers pendientes</button>
+      <div id="x-res" style="margin-top:10px"></div>
+      <h2>Reimprimir un lote</h2>
+      <p class="nota">Si un lote salió mal de la impresora, vuelva a descargar exactamente ese lote. No cambia nada en la hoja.</p>
+      <div class="rejilla">
+        <div><label for="x-lote">Lote</label><select id="x-lote"></select></div>
+      </div>
+      <button class="btn sec" id="btn-lotes" style="margin-top:10px">Ver lotes</button>
+      <button class="btn sec" id="btn-reimprimir" style="margin-top:10px">Descargar Excel del lote</button>
+      <div id="x-res-lote" style="margin-top:10px"></div>
+
+      <h2>2 · Imprimir desde Chrome (solo si la impresora aparece en Windows)</h2>
+      <p class="nota" id="medidas"></p>
+      <div class="rejilla">
+        <div><label for="l-filtro">Cuáles</label><select id="l-filtro"><option value="pendientes">Solo pendientes de imprimir</option><option value="todas">Todas</option></select></div>
+        <div><label for="l-cat">Categoría</label><select id="l-cat"></select></div>
+      </div>
+      <button class="btn sec" id="btn-cargar" style="margin-top:10px">Cargar lista</button>
+      <div id="lote-info" class="nota" style="margin-top:10px"></div>
+      <div id="lote-acciones" class="oculto">
+        <div class="rejilla">
+          <div><label for="l-desde">Desde el #</label><input type="number" id="l-desde" min="1" value="1"></div>
+          <div><label for="l-hasta">Hasta el #</label><input type="number" id="l-hasta" min="1" value="1"></div>
+        </div>
+        <button class="btn" id="btn-imp-lote" style="margin-top:10px">Imprimir este bloque</button>
+        <button class="btn sec" id="btn-marcar-lote">Marcar este bloque como impreso</button>
+      </div>
+      <p style="margin-top:14px"><button class="btn sec" id="btn-prueba">Imprimir etiqueta de prueba</button></p>
+      <div class="vista-previa" id="vista-previa"></div>
+    </section>
+  </main>
+</div>
+
+<div id="zona-impresion"></div>
+<div id="modal-qr" class="oculto" role="dialog" aria-modal="true">
+  <div class="caja-qr">
+    <div class="nota" id="qr-evento"></div>
+    <div class="qr-nombre" id="qr-nombre"></div>
+    <div class="qr-grande" id="qr-grande"></div>
+    <div class="qr-id" id="qr-id"></div>
+    <div class="nota" id="qr-esc"></div>
+    <p class="nota">Tómale una foto a este QR con tu celular: sirve para el ingreso, las comidas, el kit y todas las entregas. Take a photo of this QR code: it works for check-in, meals and all deliveries.</p>
+    <button class="btn ancho" id="qr-cerrar">Cerrar</button>
+  </div>
+</div>
+<div id="aviso" class="oculto"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════════════
+ *  Si esta página se aloja FUERA de Google (p. ej. GitHub Pages, para usar la
+ *  cámara del celular), la URL de la web app llega en el enlace (?api=…) o se
+ *  puede pegar aquí (termina en /exec). Dentro de Apps Script se deja vacía.
+ *  Punto de registro: agregue &modo=registro al enlace (abre directo en "Registrar nuevo").
+ * ════════════════════════════════════════════════════════════════════════════ */
+const API_URL = '';
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const guardar = (k, v) => { try { localStorage.setItem('acred_' + k, v); } catch (e) {} };
+const leer = k => { try { return localStorage.getItem('acred_' + k) || ''; } catch (e) { return ''; } };
+const enAppsScript = () => !!(window.google && google.script && google.script.run);
+const parametro = k => new URLSearchParams(location.search).get(k) || '';
+
+const E = { pin: '', rol: '', cfg: null, estacion: '', historial: [], ultimoCodigo: '', ultimoTiempo: 0, ocupado: false,
+            lista: [], cola: [], porEntregar: [], dia: '', tarjeta: null };
+
+/* ─── Comunicación con Apps Script ─── */
+function urlApi() { return API_URL || parametro('api') || leer('api') || ($('#api').value || '').trim(); }
+function llamar(accion, datos) {
+  const req = Object.assign({ accion: accion, pin: E.pin }, datos || {});
+  let p;
+  if (enAppsScript()) {
+    p = new Promise((ok, mal) => google.script.run.withSuccessHandler(ok).withFailureHandler(mal).api(req));
+  } else {
+    const url = urlApi();
+    if (!url) return Promise.reject(new Error('Falta la URL de la web app'));
+    p = fetch(url, { method: 'POST', body: JSON.stringify(req) }).then(r => r.json());
+  }
+  return p.then(r => {
+    if (!r || !r.ok) {
+      const msg = (r && r.error) || 'Error desconocido';
+      // el PIN cambió o se configuró de nuevo mientras la página estaba abierta: volver a la pantalla de ingreso
+      if (E.cfg && (msg === 'PIN incorrecto' || /^Configuración pendiente/.test(msg))) bloquear(msg === 'PIN incorrecto' ? 'El PIN cambió: ingrese el PIN nuevo.' : msg);
+      throw new Error(msg);
+    }
+    return r;
+  });
+}
+function aviso(msg, ms) {
+  const a = $('#aviso'); a.textContent = msg; a.classList.remove('oculto');
+  clearTimeout(aviso.t); aviso.t = setTimeout(() => a.classList.add('oculto'), ms || 3500);
+}
+
+/* ─── Sonidos ─── */
+let audio;
+function sonar(tipo) {
+  if (!$('#chk-sonido').checked) return;
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    const tonos = { ok: [[988, .12]], warn: [[660, .15], [660, .15]], err: [[220, .25], [180, .3]] }[tipo] || [];
+    let t = audio.currentTime;
+    tonos.forEach(([f, d]) => {
+      const o = audio.createOscillator(), g = audio.createGain();
+      o.frequency.value = f; o.type = 'square'; g.gain.value = .08;
+      o.connect(g); g.connect(audio.destination); o.start(t); o.stop(t + d); t += d + .06;
+    });
+  } catch (e) {}
+}
+
+/* ─── Ingreso ─── */
+function iniciar() {
+  $('#estacion').value = leer('estacion');
+  const apiEnlace = parametro('api');
+  if (apiEnlace) guardar('api', apiEnlace.trim());           // queda recordada en este celular
+  if (!enAppsScript() && !API_URL && !apiEnlace) {
+    $('#campo-api').classList.remove('oculto');
+    $('#api').value = leer('api');
+  }
+  if (parametro('modo') === 'registro' && !$('#estacion').value) $('#estacion').value = 'Punto de registro';
+  let pinGuardado = '';
+  try {
+    pinGuardado = sessionStorage.getItem('acred_pin') || '';
+    const msg = sessionStorage.getItem('acred_msg');
+    if (msg) { $('#login-msg').textContent = msg; sessionStorage.removeItem('acred_msg'); }
+  } catch (e) {}
+  if (pinGuardado) { $('#pin').value = pinGuardado; entrar(); }
+  $('#btn-entrar').onclick = entrar;
+  $('#pin').addEventListener('keydown', e => { if (e.key === 'Enter') entrar(); });
+}
+function entrar() {
+  E.pin = $('#pin').value.trim();
+  E.estacion = $('#estacion').value.trim() || 'Mesa';
+  if ($('#api').value.trim()) guardar('api', $('#api').value.trim());
+  $('#login-msg').textContent = 'Conectando…';
+  $('#btn-entrar').disabled = true;
+  llamar('config').then(cfg => {
+    if (!cfg.eventos.length) throw new Error('No hay eventos activos en la hoja "Eventos".');
+    E.cfg = cfg; E.rol = cfg.rol;
+    guardar('estacion', E.estacion);
+    try { sessionStorage.setItem('acred_pin', E.pin); } catch (e) {}
+    montar();
+  }).catch(err => { $('#login-msg').textContent = err.message; })
+    .finally(() => { $('#btn-entrar').disabled = false; });
+}
+function salir() { try { sessionStorage.removeItem('acred_pin'); } catch (e) {} location.reload(); }
+
+/* ─── Cierre por inactividad: si nadie usa la página en N minutos, se borra el PIN y se vuelve a pedir ─── */
+function bloquear(msg) {
+  if (bloquear.hecho) return;
+  bloquear.hecho = true;
+  try { detenerCamara(); } catch (e) {}
+  try { sessionStorage.removeItem('acred_pin'); sessionStorage.setItem('acred_msg', msg || 'Sesión cerrada.'); } catch (e) {}
+  E.pin = '';
+  location.reload();
+}
+function actividad() { E.actividad = Date.now(); }
+function vigilarInactividad() {
+  const min = Number(E.cfg && E.cfg.minutosBloqueo) || 0;
+  if (!min) return;
+  actividad();
+  ['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(ev => document.addEventListener(ev, actividad, { passive: true }));
+  const revisar = () => {
+    if (!$('#app').classList.contains('oculto') && Date.now() - E.actividad > min * 60000) {
+      bloquear('Sesión cerrada por ' + min + ' minutos sin uso. Ingrese el PIN de nuevo.');
+    }
+  };
+  setInterval(revisar, 20000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') revisar(); });
+}
+
+/* ─── Ayudas: evento, estados, fechas, derechos y colores ─── */
+const evento = () => E.cfg.eventos.find(e => e.codigo === $('#sel-evento').value) || E.cfg.eventos[0];
+const defEstado = col => evento().estados.find(s => s.col === col);
+const estadoSel = () => $('#sel-estado').value;
+const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+function hoyISO() { const d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+function diaCorto(iso) {
+  if (!iso) return '';
+  const p = iso.split('-').map(Number), d = new Date(p[0], p[1] - 1, p[2]);
+  return DIAS[d.getDay()] + ' ' + p[2] + ' ' + MESES[p[1] - 1];
+}
+const NOMBRE_GRUPO = { Ingreso: 'Ingreso', Entrega: 'Entregas', Comida: 'Comidas', Especial: 'Eventos especiales', Certificado: 'Certificado', Otro: 'Otros' };
+
+/** Derecho de una persona a un estado: 'si' | 'no' | 'por_definir' (misma regla que el servidor). */
+function derechoA(p, def) {
+  if (!def || !def.derecho) return 'si';
+  const d = evento().derechos.find(x => x.nombre.toLowerCase() === def.derecho.toLowerCase());
+  if (!d) return 'si';
+  const v = p.derechos ? p.derechos[d.nombre] : undefined;
+  if (d.tipo === 'casilla') return !d.definida ? 'por_definir' : (v === true ? 'si' : 'no');
+  return v === 'si' || v === 'no' ? v : 'por_definir';
+}
+function horaDe(nota) { const m = String(nota || '').match(/\d{4}-\d{2}-\d{2} (\d{2}:\d{2})/); return m ? m[1] : ''; }
+/** Celda de un estado: ✔ entregado (hora) · ○ puede recibirlo · ✘ no aplica · ? por definir */
+function celda(p, def, actual) {
+  const v = p.estados ? p.estados[def.col] : '';
+  const nota = p.notas ? p.notas[def.col] : '';
+  let cls, ic, txt;
+  if (v === def.hecho) { cls = 'si'; ic = '✔'; txt = horaDe(nota) || def.hecho; }
+  else {
+    const d = v === E.cfg.noAplica ? 'no' : derechoA(p, def);
+    if (d === 'no') { cls = 'no'; ic = '✘'; txt = 'No aplica'; }
+    else if (d === 'por_definir') { cls = 'pd'; ic = '?'; txt = 'Por definir'; }
+    else { cls = ''; ic = '○'; txt = 'Puede recibirlo'; }
+  }
+  return '<div class="celda ' + cls + (actual ? ' actual' : '') + '" title="' + esc(nota || v || '') + '"><span class="ic">' + ic + '</span>' +
+    esc(def.corto || def.col) + '<span class="h">' + esc(txt) + '</span></div>';
+}
+const COLORES = { rojo: '#d32f2f', azul: '#1565c0', verde: '#2e7d32', amarillo: '#fbc02d', naranja: '#ef6c00', anaranjado: '#ef6c00',
+  morado: '#7b1fa2', violeta: '#7b1fa2', lila: '#9575cd', negro: '#212121', blanco: '#ffffff', gris: '#9e9e9e', rosado: '#ec407a', rosa: '#ec407a',
+  fucsia: '#d81b60', cafe: '#6d4c41', marron: '#6d4c41', dorado: '#c9a227', plateado: '#b0bec5', turquesa: '#00897b', celeste: '#4fc3f7',
+  vinotinto: '#7b1e3a', beige: '#d7ccc8', 'azul oscuro': '#0d2b5c', 'azul claro': '#64b5f6', 'verde claro': '#81c784' };
+function colorCss(n) {
+  const k = String(n || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+  if (COLORES[k]) return COLORES[k];
+  if (/^#[0-9a-f]{3,6}$/i.test(k)) return k;
+  const primera = Object.keys(COLORES).find(c => k.indexOf(c) === 0);
+  return primera ? COLORES[primera] : '#cfd6e0';
+}
+const muestra = c => '<span class="muestra" style="background:' + colorCss(c) + '"></span>';
+function numeroWhatsApp(t) {
+  const d = String(t || '').replace(/\D/g, '');
+  if (d.length < 7) return '';
+  return d.length === 10 && d.charAt(0) === '3' ? '57' + d : d;
+}
+
+/* ─── Montaje ─── */
+function montar() {
+  const c = E.cfg;
+  $('#login').classList.add('oculto');
+  $('#app').classList.remove('oculto');
+  $('#h-meta').textContent = E.estacion + ' · ' + (E.rol === 'admin' ? 'Coordinación' : 'Personal de apoyo');
+  document.querySelectorAll('.solo-admin').forEach(b => b.classList.toggle('oculto', E.rol !== 'admin'));
+
+  const selEv = $('#sel-evento');
+  selEv.innerHTML = c.eventos.map(e => '<option value="' + esc(e.codigo) + '">' + esc(e.nombre) + '</option>').join('');
+  if (c.eventos.some(e => e.codigo === leer('evento'))) selEv.value = leer('evento');
+  selEv.onchange = () => { guardar('evento', selEv.value); cambiarEvento(); };
+  $('#sel-estado').onchange = () => { guardar('estado', estadoSel()); E.dia = ''; enfocar(); };
+  $('#chk-imprime').checked = leer('imprime') === '1';
+  $('#chk-imprime').onchange = () => guardar('imprime', $('#chk-imprime').checked ? '1' : '0');
+  $('#n-talla').innerHTML = '<option value="">—</option>' + c.tallas.map(t => '<option>' + esc(t) + '</option>').join('');
+  $('#n-moneda').innerHTML = c.monedas.map(m => '<option' + (m === c.monedaDefecto ? ' selected' : '') + '>' + esc(m) + '</option>').join('');
+  $('#n-medio').innerHTML = '<option value="">Elija…</option>' + c.mediosPago.map(m => '<option>' + esc(m) + '</option>').join('');
+  $('#n-tarifa').onchange = () => {
+    const t = (evento().tarifas || []).find(x => x.tarifa === $('#n-tarifa').value);
+    if (t && t.valor) $('#n-valor').value = Number(t.valor).toLocaleString('es-CO');
+    if (t && t.moneda) $('#n-moneda').value = t.moneda;
+  };
+  const et = c.etiqueta;
+  $('#medidas').textContent = 'Tamaño configurado: ' + et.ancho_mm + ' × ' + et.alto_mm + ' mm. En el diálogo de impresión: impresora de etiquetas, ese tamaño de papel, márgenes "Ninguno", escala 100 % y "Gráficos de fondo" activado.';
+  estiloEtiqueta();
+
+  document.querySelectorAll('nav button').forEach(b => b.onclick = () => abrirTab(b.dataset.tab));
+  cambiarEvento();
+  if (parametro('modo') === 'registro') {                   // enlace propio del punto de registro
+    abrirTab('nuevo');
+    $('#h-meta').textContent = E.estacion + ' · Registrar nuevo';
+  }
+  setInterval(() => { if (!$('#app').classList.contains('oculto')) cargarCola(true); }, 20000);
+  vigilarInactividad();
+}
+
+/** Selector de estados agrupado: Ingreso · Entregas · Comidas de cada día · Eventos especiales · Certificado */
+function llenarEstados() {
+  const ev = evento();
+  const grupos = [], porClave = {};
+  ev.estados.forEach(s => {
+    const clave = s.grupo === 'Comida' && s.fecha ? 'Comidas · ' + diaCorto(s.fecha) : (NOMBRE_GRUPO[s.grupo] || s.grupo);
+    if (!porClave[clave]) { porClave[clave] = []; grupos.push(clave); }
+    porClave[clave].push(s);
+  });
+  $('#sel-estado').innerHTML = grupos.map(g => '<optgroup label="' + esc(g) + '">' +
+    porClave[g].map(s => '<option value="' + esc(s.col) + '">' + esc(s.col) + '</option>').join('') + '</optgroup>').join('');
+  const recordado = leer('estado');
+  const hoy = ev.estados.find(s => s.fecha === hoyISO());
+  if (ev.estados.some(s => s.col === recordado)) $('#sel-estado').value = recordado;
+  else if (hoy) $('#sel-estado').value = hoy.col;
+}
+
+function cambiarEvento() {
+  const ev = evento();
+  $('#h-evento').textContent = ev.nombre;
+  document.title = 'Acreditación · ' + ev.nombre;
+  llenarEstados();
+  E.dia = '';
+  $('#d-col').innerHTML = ev.estados.map(s => s.col).concat([E.cfg.escarapela.col]).map(x => '<option>' + esc(x) + '</option>').join('');
+  const cats = '<option value="">Todas</option>' + ev.categorias.map(c => '<option>' + esc(c.nombre) + '</option>').join('');
+  $('#x-cat').innerHTML = cats; $('#l-cat').innerHTML = cats;
+  const colores = ev.categorias.map(c => c.color).filter((c, i, a) => c && a.indexOf(c) === i);
+  $('#x-color').innerHTML = '<option value="">Todos los colores</option>' + colores.map(c => '<option>' + esc(c) + '</option>').join('') +
+    '<option value="sin color">Sin color definido</option>';
+  $('#n-tarifa').innerHTML = (ev.tarifas || []).length
+    ? '<option value="">Elija…</option>' + ev.tarifas.map(t => '<option>' + esc(t.tarifa) + '</option>').join('')
+    : '<option value="">(sin tarifas en la hoja Tarifas)</option><option>Profesional</option><option>Estudiante</option>';
+  formularioNuevo();
+  $('#vista-previa').innerHTML = htmlEtiqueta(ejemplo(), true); ajustarTextos($('#vista-previa'));
+  $('#resultado').innerHTML = ''; $('#lista-res').innerHTML = ''; $('#x-res').innerHTML = ''; $('#x-lote').innerHTML = '';
+  E.historial = []; $('#historial tbody').innerHTML = '';
+  cargarCola(true);
+  enfocar();
+}
+
+function abrirTab(tab) {
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('activo', b.dataset.tab === tab));
+  ['acreditar', 'nuevo', 'cola', 'panel', 'escarapelas'].forEach(t => $('#tab-' + t).classList.toggle('oculto', t !== tab));
+  clearInterval(abrirTab.timer);
+  if (tab === 'panel') { cargarPanel(); abrirTab.timer = setInterval(cargarPanel, 30000); }
+  if (tab === 'cola') cargarCola();
+  if (tab === 'escarapelas') cargarLotes();
+  if (tab === 'acreditar') enfocar();
+  if (tab !== 'acreditar') detenerCamara();
+}
+function enfocar() { if (!$('#tab-acreditar').classList.contains('oculto')) $('#q').focus(); }
+
+/* El lector USB escribe como un teclado: si el cursor no está en un campo, el texto va al buscador */
+document.addEventListener('keydown', e => {
+  if ($('#app').classList.contains('oculto') || $('#tab-acreditar').classList.contains('oculto')) return;
+  const a = document.activeElement;
+  const enCampo = a && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName);
+  if (!enCampo && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    e.preventDefault(); $('#q').focus(); $('#q').value += e.key;
+  }
+});
+
+/* ─── Escanear ─── */
+function esId(texto) {
+  const t = String(texto).toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return E.cfg.eventos.some(e => t.indexOf(e.codigo) === 0 && t.length === e.codigo.length + E.cfg.largoId) ? t : '';
+}
+
+function procesarEntrada(texto) {
+  actividad();                                    // cada lectura de la cámara cuenta como uso
+  texto = String(texto || '').trim();
+  if (!texto) return;
+  const id = esId(texto);
+  $('#lista-res').innerHTML = '';
+  if (id) return registrar(id);
+  tarjeta({ clase: 'info', titulo: 'Buscando…' });
+  llamar('buscar', { q: texto, evento: evento().codigo }).then(r => {
+    const res = r.resultados;
+    if (!res.length) {
+      sonar('err');
+      tarjeta({ clase: 'err', titulo: 'No encontrado en este evento', detalle: esc(texto) + ' · Revise la ortografía o busque por documento.',
+        acciones: [['Registrar nuevo', () => { abrirTab('nuevo'); prellenar(texto); }]] });
+    } else if (res.length === 1) {
+      tarjeta({ clase: 'info', titulo: 'Confirme la persona', p: res[0] });
+    } else {
+      $('#resultado').innerHTML = '';
+      $('#lista-res').innerHTML = '<div class="lista-res">' + res.map((p, i) =>
+        '<button data-i="' + i + '"><b>' + esc(p.nombre) + '</b>' + (p.datos['Documento'] ? ' · ' + esc(p.datos['Documento']) : '') +
+        ' <span class="nota">' + esc([(p.categorias || []).join(', '), p.escarapelaId, p.id].filter(String).join(' · ')) + '</span></button>').join('') + '</div>';
+      $('#lista-res').querySelectorAll('button').forEach(b => b.onclick = () => { $('#lista-res').innerHTML = ''; tarjeta({ clase: 'info', titulo: 'Confirme la persona', p: res[+b.dataset.i] }); });
+    }
+  }).catch(err => { sonar('err'); tarjeta({ clase: 'err', titulo: 'Error', detalle: esc(err.message) }); });
+  $('#q').value = '';
+}
+
+function registrar(id, talla, destino) {
+  const ahora = Date.now();
+  const col = estadoSel();
+  const clave = id + '|' + col;                       // la cámara lee el mismo QR varias veces por segundo
+  if (!talla && clave === E.ultimoCodigo && ahora - E.ultimoTiempo < 3000) return;
+  if (E.ocupado) return;
+  E.ultimoCodigo = clave; E.ultimoTiempo = ahora; E.ocupado = true;
+  tarjeta({ clase: 'info', titulo: 'Registrando…', detalle: esc(id), destino: destino });
+  llamar('registrar', { id: id, estado: col, estacion: E.estacion, evento: evento().codigo, talla: talla || '' })
+    .then(r => tratarRegistro(r, col, destino))
+    .catch(err => {
+      sonar('err'); tarjeta({ clase: 'err', titulo: 'Error de conexión', detalle: esc(id) + ' · ' + esc(err.message) + '. Intente de nuevo.', destino: destino,
+        acciones: [['Reintentar', () => { E.ultimoCodigo = ''; registrar(id, talla, destino); }]] });
+    }).finally(() => { E.ocupado = false; $('#q').value = ''; enfocar(); });
+}
+
+/** Aviso grande sobre la escarapela, según lo que respondió el servidor al registrar un ingreso. */
+function avisoEscarapela(r) {
+  if (!r.escarapela) return '';
+  const a = r.escarapela.accion, u = r.escarapela.ubicacion || ('Bandeja ' + r.escarapela.bandeja);
+  if (a === 'entregar') return '<div class="aviso-esc entregar">Entregar escarapela preimpresa <span class="bandeja">' + esc(u) + '</span></div>';
+  if (a === 'ya_tiene') return '<div class="aviso-esc tiene">Ya recibió su escarapela.</div>';
+  if (a === 'recoger_mesa') return '<div class="aviso-esc entregar">Su sticker ya se imprimió: recogerlo en la mesa de impresión</div>';
+  if ($('#chk-imprime').checked) { imprimirYEntregar(r.p); return '<div class="aviso-esc tiene">Imprimiendo escarapela en esta estación…</div>'; }
+  setTimeout(() => cargarCola(true), 300);
+  return '<div class="aviso-esc imprimir">Sin escarapela: enviar a la mesa de impresión (ya está en la cola)</div>';
+}
+
+/** Alertas que dependen de la persona: anfitrión / a quién avisar (fuertes al ingresar). */
+function alertasPersona(p, def) {
+  const out = [], ev = evento();
+  const cat = (p.principal || (p.categorias || [])[0] || '').toUpperCase();
+  const fuerte = def && def.ingreso;
+  const msg = encodeURIComponent('Hola, ' + p.nombre + (cat ? ' (' + cat.toLowerCase() + ')' : '') + ' acaba de llegar a ' + ev.nombre + ' · ' + E.estacion + '.');
+  const boton = num => num ? '<div><a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/' + num + '?text=' + msg + '">Avisar por WhatsApp</a></div>' : '';
+  if (p.anfitrion || p.whatsapp) {
+    const num = numeroWhatsApp(p.whatsapp);
+    const txt = (cat ? cat + ' · ' : '') + 'avisar a su anfitrión: ' + (p.anfitrion || '') + (p.whatsapp ? ' · WhatsApp ' + p.whatsapp : '');
+    out.push(fuerte ? '<div class="alerta azul">' + esc(txt) + boton(num) + '</div>' : '<div class="info-linea">👤 ' + esc(txt) + '</div>');
+  }
+  if (p.avisarA) {
+    const num = numeroWhatsApp(p.avisarA);
+    const txt = (cat ? cat + ' · ' : '') + 'avisar a: ' + p.avisarA;
+    out.push(fuerte ? '<div class="alerta azul">' + esc(txt) + boton(num) + '</div>' : '<div class="info-linea">📣 ' + esc(txt) + '</div>');
+  }
+  return out;
+}
+
+function tratarRegistro(r, col, destino) {
+  const p = r.p, def = defEstado(col) || { col: col };
+  const etiqueta = (def.corto || col).toUpperCase();
+  if (r.estado === 'no_encontrado') {
+    sonar('err');
+    tarjeta({ clase: 'err', titulo: 'Código no encontrado', detalle: esc(r.id) + ' · Este QR no existe o fue mal leído. Busque por nombre o documento.', destino: destino });
+    return agregarHistorial('err', r.id, 'No encontrado', col);
+  }
+  if (r.estado === 'otro_evento') {
+    sonar('err');
+    tarjeta({ clase: 'err', titulo: 'QR de otro evento', detalle: esc(r.id) + ' · pertenece a: <b>' + esc(r.evento) + '</b>.', destino: destino });
+    return agregarHistorial('err', r.id, 'Otro evento', col);
+  }
+  if (r.estado === 'no_aplica') {
+    sonar('err');
+    tarjeta({ clase: 'err', titulo: col + ' no aplica para este evento', p: p, col: col, destino: destino });
+    return agregarHistorial('err', p.id, p.nombre, col + ' (no aplica)');
+  }
+  if (r.estado === 'sin_derecho') {
+    sonar('err');
+    const d = evento().derechos.find(x => def.derecho && x.nombre.toLowerCase() === def.derecho.toLowerCase());
+    const lista = def.grupo === 'Especial' && d && d.tipo === 'casilla';
+    const tiene = evento().estados.filter(s => s.grupo === def.grupo && s.col !== def.col && s.derecho && derechoA(p, s) === 'si')
+      .map(s => (s.corto || s.col).toLowerCase()).filter((x, i, a) => a.indexOf(x) === i);
+    const extra = [def.alternativa, def.grupo === 'Entrega' && tiene.length ? 'sí tiene ' + tiene.join(', ') : ''].filter(String).join(' · ');
+    const alerta = '<div class="alerta roja">' + esc(lista ? 'NO ESTÁ EN LA LISTA: ' + (def.derecho || etiqueta).toUpperCase() : 'NO TIENE ' + etiqueta) +
+      (extra ? '<div class="sub">' + esc(extra) + '</div>' : '') + '<div class="sub">No se registró.</div></div>';
+    tarjeta({ clase: 'err', titulo: '✘ Sin derecho: ' + col, p: p, col: col, alertas: [alerta], destino: destino });
+    return agregarHistorial('err', p.id, p.nombre, col + ' (sin derecho)');
+  }
+  if (r.estado === 'falta_talla') {
+    sonar('warn');
+    const alerta = '<div class="alerta ambar">' + esc(etiqueta) + ' SIN TALLA · registrar talla<div class="sub">Elija la talla que se entrega: queda guardada y se marca ' + esc(col) + '.</div>' +
+      '<div class="tallas">' + E.cfg.tallas.map(t => '<button data-talla="' + esc(t) + '">' + esc(t) + '</button>').join('') + '</div></div>';
+    tarjeta({ clase: 'warn', titulo: 'Falta la talla', p: p, col: col, alertas: [alerta], destino: destino,
+      despues: cont => cont.querySelectorAll('[data-talla]').forEach(b => b.onclick = () => registrar(p.id, b.dataset.talla, destino)) });
+    return agregarHistorial('warn', p.id, p.nombre, col + ' (falta talla)');
+  }
+  const alertas = [];
+  if (def.pideTalla && p.talla && (r.estado === 'registrado' || r.estado === 'repetido')) alertas.push('<div class="alerta verde">Talla: <span class="grande">' + esc(p.talla) + '</span></div>');
+  if (r.derecho === 'por_definir') alertas.push('<div class="alerta gris">' + esc(def.derecho || col) + ': lista por definir · se registró, confirme con coordinación</div>');
+  const htmlEsc = avisoEscarapela(r);
+  if (r.estado === 'repetido') {
+    sonar('warn');
+    tarjeta({ clase: 'warn', titulo: 'Ya lo había recibido: ' + col, detalle: 'Primer registro: ' + esc(r.previo), p: p, col: col, alertas: alertas, extra: htmlEsc, destino: destino });
+    return agregarHistorial('warn', p.id, p.nombre, col + ' (repetido)');
+  }
+  if (r.estado === 'creado') {
+    sonar('ok');
+    tarjeta({ clase: 'ok', titulo: '✔ Registrado · su escarapela está en la cola de impresión', p: p, alertas: alertas, destino: destino });
+    return agregarHistorial('ok', p.id, p.nombre, 'Registro nuevo');
+  }
+  sonar(r.escarapela && r.escarapela.accion === 'imprimir' && !$('#chk-imprime').checked ? 'warn' : 'ok');
+  tarjeta({ clase: 'ok', titulo: '✔ ' + col + ': ' + (def.hecho || 'Registrado'), p: p, col: col, alertas: alertas, extra: htmlEsc, destino: destino });
+  agregarHistorial('ok', p.id, p.nombre, col);
+}
+
+/**
+ * Tarjeta del resultado (de arriba abajo): resultado · quién es · alertas · hoy · entregas · ingreso ·
+ * eventos especiales · ponencia · certificado · escarapela. o = {clase, titulo, detalle, p, col, alertas, extra, acciones, destino, despues}
+ */
+function tarjeta(o) {
+  const cont = o.destino ? $(o.destino) : $('#resultado');
+  E.tarjeta = o;
+  const p = o.p, ev = evento();
+  let html = '<div class="resultado ' + o.clase + '"><div class="estado">' + esc(o.titulo) + '</div>';
+  if (o.detalle) html += '<div class="det">' + o.detalle + '</div>';
+  if (p) {
+    const def = o.col ? defEstado(o.col) : defEstado(estadoSel());
+    html += '<div class="nombre">' + esc(p.nombre) + '</div>' +
+      '<div class="doc">' + esc([p.datos && p.datos['Documento'], p.id].filter(String).join(' · ')) + '</div>' +
+      '<div class="chips">' + (p.categorias || []).map(c => '<span class="chip cat">' + esc(c) + '</span>').join('') +
+      (p.color ? '<span class="chip color">' + muestra(p.color) + esc(p.color) + '</span>' : '') +
+      (p.eventosPersona > 1 ? '<span class="chip frecuente" title="ID persona ' + esc(p.persona) + '">★ ' + p.eventosPersona + ' eventos con nosotros</span>' : '') + '</div>';
+    html += (o.alertas || []).join('') + alertasPersona(p, def).join('') + (o.extra || '');
+    html += '<div class="secciones">' + secciones(p, o.col || estadoSel()) + '</div>';
+  } else {
+    html += (o.alertas || []).join('') + (o.extra || '');
+  }
+  const acciones = (o.acciones || []).slice();
+  if (p) {
+    const col = estadoSel(), def = defEstado(col);
+    if (def && p.estados[col] !== def.hecho && o.clase === 'info') acciones.unshift(['Registrar: ' + col, () => registrar(p.id, '', o.destino)]);
+    acciones.push(['Mostrar QR', () => mostrarQR(p)]);
+    if ($('#chk-imprime').checked) acciones.push([p.escarapela === E.cfg.escarapela.pendiente ? 'Imprimir escarapela' : 'Reimprimir con Chrome', () => imprimirYEntregar(p)]);
+  }
+  if (acciones.length) html += '<div class="acciones">' + acciones.map((a, i) => '<button class="btn' + (i ? ' sec' : '') + '" data-ac="' + i + '">' + esc(a[0]) + '</button>').join('') + '</div>';
+  const casillas = ev.derechos.filter(d => d.tipo === 'casilla');
+  if (p && E.rol === 'admin' && casillas.length) {
+    html += '<details class="derechos"><summary>Cambiar derechos (coordinación)</summary>' +
+      casillas.map(d => '<label><input type="checkbox" data-der="' + esc(d.nombre) + '"' + (p.derechos[d.nombre] === true ? ' checked' : '') + '> ' +
+        esc(d.nombre) + (d.definida ? '' : ' <span class="nota">(lista por definir)</span>') + '</label>').join('') + '</details>';
+  }
+  html += '</div>';
+  cont.innerHTML = html;
+  cont.querySelectorAll('[data-ac]').forEach(b => b.onclick = acciones[+b.dataset.ac][1]);
+  cont.querySelectorAll('[data-dia]').forEach(b => b.onclick = () => { E.dia = b.dataset.dia; tarjeta(o); });
+  cont.querySelectorAll('[data-reimp]').forEach(b => b.onclick = () => reimprimir(p, b));
+  cont.querySelectorAll('[data-der]').forEach(ch => ch.onchange = () => {
+    ch.disabled = true;
+    llamar('derecho', { id: p.id, derecho: ch.dataset.der, valor: ch.checked, estacion: E.estacion })
+      .then(r => {
+        aviso(ch.dataset.der + ': ' + (ch.checked ? 'tiene derecho' : 'sin derecho'));
+        Object.assign(o, { p: r.p, clase: 'info', titulo: 'Derechos actualizados · registre de nuevo si corresponde', alertas: [], extra: '', detalle: '' });
+        tarjeta(o);
+      })
+      .catch(err => { aviso(err.message); ch.checked = !ch.checked; ch.disabled = false; });
+  });
+  if (o.despues) o.despues(cont);
+}
+
+/** Secciones de estado de la persona según los grupos del evento. */
+function secciones(p, colActual) {
+  const ev = evento();
+  const por = g => ev.estados.filter(s => s.grupo === g);
+  const bloque = (titulo, cuerpo) => '<div class="sec"><h3>' + esc(titulo) + '</h3>' + cuerpo + '</div>';
+  const cel = lista => '<div class="celdas">' + lista.map(s => celda(p, s, s.col === colActual)).join('') + '</div>';
+  const out = [];
+  // Hoy: comidas del día (según la fecha del celular o el estado de la estación)
+  const comidasDia = por('Comida').filter(s => s.fecha);
+  if (comidasDia.length) {
+    const dias = comidasDia.map(s => s.fecha).filter((d, i, a) => a.indexOf(d) === i).sort();
+    const actual = defEstado(colActual);
+    let dia = E.dia || (actual && actual.grupo === 'Comida' && actual.fecha) || (dias.indexOf(hoyISO()) !== -1 ? hoyISO() : '');
+    if (!dia) dia = dias.find(d => d >= hoyISO()) || dias[dias.length - 1];
+    out.push(bloque((dia === hoyISO() ? 'Hoy · ' : '') + diaCorto(dia),
+      '<div class="dias">' + dias.map(d => '<button data-dia="' + d + '" class="' + (d === dia ? 'activo' : '') + '">' + esc(diaCorto(d).split(' ').slice(0, 2).join(' ')) + '</button>').join('') + '</div>' +
+      cel(comidasDia.filter(s => s.fecha === dia))));
+  }
+  const comidasSin = por('Comida').filter(s => !s.fecha);
+  if (comidasSin.length) out.push(bloque('Comidas', cel(comidasSin)));
+  const entregas = por('Entrega');
+  if (entregas.length) {
+    const conTalla = entregas.filter(s => s.pideTalla);
+    const talla = conTalla.length && (p.talla || conTalla.some(s => derechoA(p, s) !== 'no'))
+      ? '<div class="info-linea">Talla: <b>' + esc(p.talla || 'sin registrar') + '</b></div>' : '';
+    out.push(bloque('Entregas', cel(entregas) + talla));
+  }
+  if (por('Ingreso').length) out.push(bloque('Ingreso', cel(por('Ingreso'))));
+  if (por('Especial').length) out.push(bloque('Eventos especiales', cel(por('Especial'))));
+  if (por('Otro').length) out.push(bloque('Otros', cel(por('Otro'))));
+  if (p.ponencia) out.push('<div class="sec linea"><b>Ponencia:</b> ' + esc(p.ponencia) + '</div>');
+  por('Certificado').forEach(s => {
+    const d = derechoA(p, s), hecho = p.estados[s.col] === s.hecho;
+    out.push('<div class="sec linea"><b>' + esc(s.corto || s.col) + ':</b> ' + (d === 'si' ? 'Sí' : d === 'no' ? 'No' : 'Por definir') +
+      (hecho ? ' · ✔ ' + esc(s.hecho) + ' ' + esc(horaDe(p.notas[s.col])) : '') + '</div>');
+  });
+  // Escarapela
+  const EC = E.cfg.escarapela;
+  let estadoEsc;
+  if (p.escarapela === EC.entregada) estadoEsc = '✔ Entregada';
+  else if (p.escarapela === EC.impresa) estadoEsc = /-S\d+$/i.test(p.lote || '') ? 'Impresa en sitio · recoger en la mesa de impresión'
+    : 'Preimpresa' + (p.escarapelaId ? '' : ' · ' + (p.ubicacion || ''));
+  else estadoEsc = p.lote === 'Reimprimir' ? 'Reimpresión pedida · en la cola de impresión' : 'Por imprimir';
+  out.push('<div class="sec"><h3>Escarapela</h3><div class="linea">' + (p.color ? muestra(p.color) + '<b>' + esc(p.color) + '</b> · ' : '') +
+    (p.escarapelaId ? '<b>' + esc(p.escarapelaId) + '</b> · ' : '') + esc(estadoEsc) + '</div>' +
+    '<div class="acciones"><button class="btn sec" data-reimp="1">Reimprimir QR (perdió la escarapela)</button></div></div>');
+  return out.join('');
+}
+
+function reimprimir(p, boton) {
+  if (!boton.dataset.confirmar) { boton.dataset.confirmar = '1'; boton.textContent = 'Toque otra vez para confirmar'; return; }
+  boton.disabled = true;
+  llamar('reimprimir', { id: p.id, estacion: E.estacion }).then(r => {
+    aviso('En la cola de impresión: ' + (r.p.escarapelaId || r.p.nombre) + (r.p.color ? ' · escarapela ' + r.p.color : ''), 5000);
+    E.tarjeta.p = r.p; tarjeta(E.tarjeta); cargarCola(true); mostrarQR(r.p);
+  }).catch(err => { aviso(err.message); boton.disabled = false; });
+}
+
+function agregarHistorial(tipo, id, nombre, col) {
+  const color = { ok: 'var(--ok)', warn: 'var(--warn)', err: 'var(--err)' }[tipo];
+  const hora = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  E.historial.unshift('<tr><td><span class="punto" style="background:' + color + '"></span></td><td>' + hora + '</td><td>' +
+    esc(nombre) + '</td><td class="nota">' + esc(col) + '</td><td class="nota">' + esc(id) + '</td></tr>');
+  E.historial = E.historial.slice(0, 15);
+  $('#historial tbody').innerHTML = E.historial.join('');
+}
+
+$('#btn-buscar').onclick = () => procesarEntrada($('#q').value);
+$('#q').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); procesarEntrada($('#q').value); } });
+
+/* ─── Cámara (versión alojada fuera de Google) ─── */
+let escaner = null;
+function cargarScript(src) {
+  return new Promise((ok, mal) => {
+    if (document.querySelector('script[src="' + src + '"]')) return ok();
+    const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => mal(new Error('No se pudo cargar el lector'));
+    document.head.appendChild(s);
+  });
+}
+function abrirCamara() {
+  if (escaner) return detenerCamara();
+  $('#camara').classList.remove('oculto');
+  cargarScript('https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js').then(() => {
+    escaner = new Html5Qrcode('camara');
+    return escaner.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 240, height: 240 } },
+      texto => {
+        if (texto === abrirCamara.ultimo && Date.now() - abrirCamara.t < 3000) return;
+        abrirCamara.ultimo = texto; abrirCamara.t = Date.now();
+        procesarEntrada(texto);
+      }, () => {});
+  }).then(() => { $('#btn-camara').textContent = '⏹'; }).catch(err => {
+    escaner = null; $('#camara').classList.add('oculto');
+    const msg = enAppsScript()
+      ? 'Google no permite usar la cámara dentro de Apps Script. Use un lector USB aquí, o en el celular abra la versión para cámara (ver guía).'
+      : 'No se pudo abrir la cámara: ' + (err && err.message || err) + '. Revise el permiso de cámara del navegador.';
+    tarjeta({ clase: 'err', titulo: 'Cámara no disponible', detalle: esc(msg) });
+  });
+}
+function detenerCamara() {
+  if (!escaner) return;
+  escaner.stop().catch(() => {}).finally(() => { escaner = null; $('#camara').classList.add('oculto'); $('#btn-camara').textContent = '📷'; });
+}
+$('#btn-camara').onclick = abrirCamara;
+
+/* ─── Registrar nuevo (punto de registro, personal, invitados, tardíos) ─── */
+function formularioNuevo() {
+  if (!E.cfg) return;
+  const ev = evento();
+  const campos = [
+    { col: 'Nombres', titulo: ev.nombreUnCampo ? 'Nombre completo' : 'Nombres', req: true },
+    ev.nombreUnCampo ? null : { col: 'Apellidos', titulo: 'Apellidos', req: true },
+    { col: 'Documento', titulo: 'Cédula o pasaporte', req: true },
+    { col: 'Correo', titulo: 'Correo', tipo: 'email' },
+    { col: 'Teléfono', titulo: 'Teléfono', tipo: 'tel' },
+    { col: 'Institución', titulo: 'Institución' },
+  ].filter(Boolean);
+  $('#campos-nuevo').innerHTML = campos.map(f => '<div><label for="n-' + f.col.replace(/\W/g, '') + '">' + esc(f.titulo) + (f.req ? ' *' : '') + '</label>' +
+    '<input type="' + (f.tipo || 'text') + '" id="n-' + f.col.replace(/\W/g, '') + '" data-col="' + esc(f.col) + '"' + (f.req ? ' required' : '') + ' autocomplete="off"></div>').join('');
+  const porDefecto = (ev.categorias.find(c => /^(inscrito|asistente)$/i.test(c.nombre)) || ev.categorias[0] || {}).nombre;
+  $('#n-cats').innerHTML = ev.categorias.map(c => '<label><input type="checkbox" value="' + esc(c.nombre) + '"' + (c.nombre === porDefecto ? ' checked' : '') + '> ' +
+    (c.color ? muestra(c.color) : '') + esc(c.nombre) + '</label>').join('');
+  $('#btn-nuevo').textContent = 'Registrar';
+  $('#n-ayuda').textContent = 'Inscribe a la persona en el evento. Elija sus categorías: de ellas salen su color de escarapela y sus derechos. ' +
+    'Su QR aparece en pantalla (y le llega por correo si tiene) y su escarapela pasa a la cola de impresión. Se registra además el estado elegido arriba.';
+}
+function prellenar(texto) {
+  if (/^\d{5,}$/.test(texto.replace(/\D/g, '')) && !/[a-z]{3}/i.test(texto)) {
+    const d = document.querySelector('#campos-nuevo [data-col="Documento"]'); if (d) d.value = texto.trim();
+  } else if (/@/.test(texto)) {
+    const c = document.querySelector('#campos-nuevo [data-col="Correo"]'); if (c) c.value = texto;
+  } else {
+    const partes = texto.trim().split(/\s+/);
+    const n = document.querySelector('#campos-nuevo [data-col="Nombres"]'), a = document.querySelector('#campos-nuevo [data-col="Apellidos"]');
+    if (n && !a) n.value = texto.trim();
+    else {
+      if (n) n.value = partes.slice(0, Math.ceil(partes.length / 2)).join(' ');
+      if (a) a.value = partes.slice(Math.ceil(partes.length / 2)).join(' ');
+    }
+  }
+}
+$('#form-nuevo').addEventListener('submit', e => {
+  e.preventDefault();
+  const datos = {};
+  document.querySelectorAll('#campos-nuevo [data-col]').forEach(el => datos[el.dataset.col] = el.value.trim());
+  const req = { datos: datos, evento: evento().codigo, estacion: E.estacion, enviarCorreo: $('#chk-correo-nuevo').checked, talla: $('#n-talla').value,
+    estado: estadoSel(), categorias: Array.from(document.querySelectorAll('#n-cats input:checked')).map(x => x.value) };
+  const pago = { tarifa: $('#n-tarifa').value, valor: $('#n-valor').value.trim(), moneda: $('#n-moneda').value, medio: $('#n-medio').value, comprobante: $('#n-comprobante').value.trim() };
+  if (pago.tarifa || pago.valor || pago.medio || pago.comprobante) req.pago = pago;
+  $('#btn-nuevo').disabled = true;
+  tarjeta({ clase: 'info', titulo: 'Registrando…', destino: '#resultado-nuevo' });
+  llamar('nuevo', req).then(r => {
+    if (r.duplicado) aviso('Esta persona ya estaba inscrita en este evento: se usó su registro' + (r.pagoNoGuardado ? ' (los datos de pago no se cambiaron).' : '.'), 6000);
+    tratarRegistro(r, req.estado, '#resultado-nuevo');
+    $('#form-nuevo').reset(); formularioNuevo(); $('#bloque-pago').open = false;
+    cargarCola(true);
+    if (r.p) mostrarQR(r.p);                         // la persona le toma foto a su QR de una vez
+  }).catch(err => {
+    sonar('err'); tarjeta({ clase: 'err', titulo: 'No se pudo registrar', detalle: esc(err.message), destino: '#resultado-nuevo' });
+  }).finally(() => { $('#btn-nuevo').disabled = false; });
+});
+
+/* ─── Cola de impresión (agrupada por color de escarapela) ─── */
+function itemPersona(p, i, botones) {
+  return '<div class="cola-item"><div><b>' + esc(p.nombre) + '</b><div class="nota">' +
+    esc([p.escarapelaId, (p.categorias || []).join(', '), p.id, p.lote === 'Reimprimir' ? 'reimpresión' : p.lote].filter(String).join(' · ')) + '</div></div>' +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">' + botones(i) + '</div></div>';
+}
+function cargarCola(silencioso) {
+  if (!E.cfg) return;
+  llamar('cola', { evento: evento().codigo }).then(r => {
+    E.cola = r.lista; E.porEntregar = r.porEntregar || [];
+    $('#n-cola').textContent = r.lista.length ? '(' + r.lista.length + ')' : '';
+    $('#n-por-imprimir').textContent = '(' + r.lista.length + ')';
+    $('#n-por-entregar').textContent = '(' + E.porEntregar.length + ')';
+    const grupos = {};
+    r.lista.forEach((p, i) => { const k = p.color || 'Sin color'; (grupos[k] = grupos[k] || []).push(i); });
+    $('#cola-lista').innerHTML = r.lista.length ? Object.keys(grupos).map(k => '<div class="grupo-color"><h3>' + muestra(k === 'Sin color' ? '' : k) + esc(k) +
+        ' <span class="nota">(' + grupos[k].length + ')</span></h3>' +
+        '<button class="btn" data-xcolor="' + esc(k === 'Sin color' ? 'sin color' : k) + '">Descargar Excel para NIIMBOT · ' + esc(k) + ' (' + grupos[k].length + ')</button>' +
+        ($('#chk-imprime').checked ? ' <button class="btn sec" data-chrome="' + esc(k) + '">Imprimir con Chrome</button>' : '') +
+        grupos[k].map(i => itemPersona(r.lista[i], i, j => '<button class="btn sec" data-qr="' + j + '">QR</button>' +
+          ($('#chk-imprime').checked ? '<button class="btn sec" data-imp="' + j + '">Imprimir</button>' : ''))).join('') + '</div>').join('')
+      : '<p class="nota">No hay personas pendientes de sticker.</p>';
+    $('#entrega-lista').innerHTML = E.porEntregar.length ? E.porEntregar.map((p, i) => itemPersona(p, i, k =>
+        '<button class="btn sec" data-qr2="' + k + '">QR</button><button class="btn" data-ent="' + k + '">Entregada</button>')).join('')
+      : '<p class="nota">Nada pendiente por entregar.</p>';
+    $('#cola-lista').querySelectorAll('[data-qr]').forEach(b => b.onclick = () => mostrarQR(E.cola[+b.dataset.qr]));
+    $('#cola-lista').querySelectorAll('[data-imp]').forEach(b => b.onclick = () => imprimirYEntregar(E.cola[+b.dataset.imp]));
+    $('#cola-lista').querySelectorAll('[data-xcolor]').forEach(b => b.onclick = () => exportarCola(b.dataset.xcolor, b));
+    $('#cola-lista').querySelectorAll('[data-chrome]').forEach(b => b.onclick = () => {
+      const l = E.cola.filter(p => (p.color || 'Sin color') === b.dataset.chrome); imprimir(l); marcar(l.map(p => p.id), 'entregada');
+    });
+    $('#entrega-lista').querySelectorAll('[data-qr2]').forEach(b => b.onclick = () => mostrarQR(E.porEntregar[+b.dataset.qr2]));
+    $('#entrega-lista').querySelectorAll('[data-ent]').forEach(b => b.onclick = () => marcar([E.porEntregar[+b.dataset.ent].id], 'entregada'));
+  }).catch(err => { if (!silencioso) aviso(err.message); });
+}
+function exportarCola(color, boton) {
+  boton.disabled = true;
+  $('#cola-res').innerHTML = '<p class="nota">Generando el lote…</p>';
+  llamar('exportar', { evento: evento().codigo, filtro: 'cola', color: color, estacion: E.estacion }).then(r => {
+    if (!r.n) { $('#cola-res').innerHTML = '<p class="nota">No había nadie pendiente.</p>'; return; }
+    descargarExcel(r);
+    $('#cola-res').innerHTML = '<div class="seccion"><b>Lote ' + esc(r.lote) + '</b> · ' + r.n + ' sticker(s) · ' + esc(r.colores || '') + ' · ' +
+      '<a href="' + esc(r.url) + '" target="_blank" rel="noopener">copia en Drive</a>' +
+      '<p class="nota">Importe el archivo en NIIMBOT con la plantilla .jcps e imprima. Pegue cada sticker en la escarapela del color de su ID. Esas personas pasaron a "Impresos, por entregar".</p></div>';
+    cargarCola(true);
+  }).catch(err => { $('#cola-res').innerHTML = '<p class="nota">' + esc(err.message) + '</p>'; boton.disabled = false; });
+}
+$('#btn-cola').onclick = () => cargarCola();
+
+function marcar(ids, cual) {
+  const valor = E.cfg.escarapela[cual];
+  return llamar('marcarEscarapela', { ids: ids, valor: valor, estacion: E.estacion })
+    .then(r => { aviso(r.n + ' escarapela(s): ' + valor); cargarCola(true); return r; })
+    .catch(err => aviso('No se pudo marcar: ' + err.message));
+}
+function imprimirYEntregar(p) { imprimir([p]); marcar([p.id], 'entregada'); }
+
+/* ─── Panel ─── */
+function cargarPanel() {
+  llamar('resumen', { evento: evento().codigo }).then(r => {
+    const EC = E.cfg.escarapela;
+    const pct = (n, d) => (d === undefined ? r.inscritos : d) ? Math.round(100 * n / (d === undefined ? r.inscritos : d)) : 0;
+    const kpi = (v, l, p) => '<div class="kpi"><div class="v">' + v + '</div><div class="l">' + esc(l) + '</div>' +
+      (p !== undefined ? '<div class="barra-p"><div style="width:' + p + '%"></div></div>' : '') + '</div>';
+    $('#panel-titulo').textContent = 'Asistencia en vivo · ' + r.evento;
+    $('#kpis').innerHTML = kpi(r.inscritos, 'Inscritos') +
+      kpi(r.asistieron + ' <small class="nota">(' + pct(r.asistieron) + '%)</small>', 'Han ingresado', pct(r.asistieron)) +
+      kpi(r.inscritos - r.asistieron, 'No han llegado') +
+      kpi(r.escarapelas[EC.impresa] || 0, 'Impresas por entregar') +
+      kpi(r.escarapelas[EC.entregada] || 0, 'Escarapelas entregadas', pct(r.escarapelas[EC.entregada] || 0)) +
+      kpi(r.colaImpresion, 'En cola de impresión') +
+      kpi(r.correos, 'Correos con QR enviados', pct(r.correos));
+    let grupo = '';
+    $('#tabla-estados').innerHTML = '<tr><th>Estado</th><th>Registrados</th><th>Con derecho</th><th>%</th></tr>' + evento().estados.map(s => {
+      const g = s.grupo === 'Comida' && s.fecha ? 'Comidas · ' + diaCorto(s.fecha) : (NOMBRE_GRUPO[s.grupo] || s.grupo);
+      const cab = g !== grupo ? '<tr class="grupo"><td colspan="4">' + esc(g) + '</td></tr>' : '';
+      grupo = g;
+      const n = r.porEstado[s.col] || 0, d = r.conDerecho[s.col] || 0, pd = r.porDefinir[s.col] || 0;
+      return cab + '<tr><td>' + esc(s.grupo === 'Comida' && s.fecha ? s.corto : s.col) + '</td><td>' + n + '</td><td>' + d + (pd ? ' <span class="nota">(+' + pd + ' por definir)</span>' : '') +
+        '</td><td>' + (d ? pct(n, d) + '%' : '—') + '</td></tr>';
+    }).join('');
+    $('#tabla-tipos').innerHTML = '<tr><th>Categoría</th><th>Inscritos</th><th>Ingresaron</th><th>%</th></tr>' +
+      Object.keys(r.porCategoria).map(t => { const x = r.porCategoria[t]; return '<tr><td>' + esc(t) + '</td><td>' + x.inscritos + '</td><td>' + x.asistieron +
+        '</td><td>' + (x.inscritos ? Math.round(100 * x.asistieron / x.inscritos) : 0) + '%</td></tr>'; }).join('');
+    $('#tabla-ultimos').innerHTML = '<tr><th>Hora</th><th>Acción</th><th>Nombre</th><th>Estado</th><th>Estación</th></tr>' +
+      r.ultimos.map(u => '<tr><td>' + esc(String(u[0]).slice(11, 19)) + '</td><td>' + esc(u[2]) + '</td><td>' + esc(u[4]) +
+        '</td><td>' + esc(u[5]) + '</td><td>' + esc(u[6]) + '</td></tr>').join('');
+    $('#panel-hora').textContent = 'Actualizado ' + String(r.hora).slice(11, 16);
+  }).catch(err => aviso(err.message));
+}
+$('#btn-refrescar').onclick = cargarPanel;
+
+let confirmarDeshacer = 0;
+$('#btn-deshacer').onclick = () => {
+  const id = $('#d-id').value.trim(), col = $('#d-col').value;
+  if (!id) return aviso('Escriba el ID');
+  if (Date.now() - confirmarDeshacer > 4000) { confirmarDeshacer = Date.now(); return aviso('Haga clic otra vez para confirmar: deshacer "' + col + '" de ' + id); }
+  confirmarDeshacer = 0;
+  llamar('deshacer', { id: id, columna: col, estacion: E.estacion })
+    .then(r => { aviso(col + ': ' + r.antes + ' → ' + r.ahora); cargarPanel(); }).catch(err => aviso(err.message));
+};
+
+/* ─── Escarapelas: Excel para NIIMBOT ─── */
+function descargarExcel(r) {
+  if (!r.base64) return;
+  try {
+    const bin = atob(r.base64), bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const url = URL.createObjectURL(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    const a = document.createElement('a'); a.href = url; a.download = r.archivo || 'stickers.xlsx';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  } catch (e) { aviso('Descárguelo desde la copia en Drive'); }
+}
+$('#btn-exportar').onclick = () => {
+  $('#x-res').innerHTML = '<p class="nota">Generando el Excel…</p>';
+  $('#btn-exportar').disabled = true;
+  llamar('exportar', { evento: evento().codigo, filtro: 'pendientes', categoria: $('#x-cat').value, color: $('#x-color').value, estacion: E.estacion }).then(r => {
+    if (!r.n) { $('#x-res').innerHTML = '<p class="nota">No hay stickers pendientes con ese filtro: ya están en algún lote.</p>'; return; }
+    descargarExcel(r);
+    $('#x-res').innerHTML = '<div class="seccion"><b>Lote ' + esc(r.lote) + '</b> · ' + r.n + ' sticker(s) · ' + esc(r.colores || '') + ' · ' +
+      '<a href="' + esc(r.url) + '" target="_blank" rel="noopener">copia en Drive</a>' +
+      (r.sinColor ? '<p class="nota" style="color:var(--err)">' + r.sinColor + ' sticker(s) sin color definido (ID con sigla SC). Defina los colores en la hoja Categorías.</p>' : '') +
+      '<p class="nota">Abra el archivo en el software NIIMBOT con la plantilla .jcps (QR ← Codigo QR · texto ← ID escarapela) e imprima. Si sale mal, use "Reimprimir un lote".</p></div>';
+    cargarLotes();
+  }).catch(err => { $('#x-res').innerHTML = '<p class="nota">' + esc(err.message) + '</p>'; })
+    .finally(() => { $('#btn-exportar').disabled = false; });
+};
+function cargarLotes() {
+  llamar('lotes', { evento: evento().codigo }).then(r => {
+    $('#x-lote').innerHTML = r.lotes.length ? r.lotes.map(l => '<option value="' + esc(l.lote) + '">' + esc(l.lote) + ' · ' + l.n + ' sticker(s)</option>').join('')
+      : '<option value="">Aún no hay lotes</option>';
+  }).catch(err => aviso(err.message));
+}
+$('#btn-lotes').onclick = cargarLotes;
+$('#btn-reimprimir').onclick = () => {
+  const lote = $('#x-lote').value;
+  if (!lote) return aviso('Primero pulse "Ver lotes" y elija uno');
+  $('#x-res-lote').innerHTML = '<p class="nota">Generando…</p>';
+  llamar('exportar', { evento: evento().codigo, filtro: 'lote', lote: lote, estacion: E.estacion }).then(r => {
+    descargarExcel(r);
+    $('#x-res-lote').innerHTML = '<p class="nota">Lote ' + esc(lote) + ': ' + r.n + ' sticker(s) descargados · <a href="' + esc(r.url) + '" target="_blank" rel="noopener">copia en Drive</a></p>';
+  }).catch(err => { $('#x-res-lote').innerHTML = '<p class="nota">' + esc(err.message) + '</p>'; });
+};
+
+/* ─── QR en pantalla ─── */
+function mostrarQR(p) {
+  $('#qr-evento').textContent = evento().nombre;
+  $('#qr-nombre').textContent = p.nombre || (p.nombres + ' ' + p.apellidos).trim();
+  $('#qr-id').textContent = p.id;
+  $('#qr-esc').textContent = [p.escarapelaId ? 'ID escarapela ' + p.escarapelaId : '', p.color ? 'Escarapela ' + p.color : ''].filter(String).join(' · ');
+  const qr = qrcode(0, 'M'); qr.addData(p.id); qr.make();
+  $('#qr-grande').innerHTML = qr.createSvgTag({ cellSize: 1, margin: 4, scalable: true });
+  $('#modal-qr').classList.remove('oculto');
+}
+$('#qr-cerrar').onclick = () => { $('#modal-qr').classList.add('oculto'); enfocar(); };
+$('#modal-qr').onclick = e => { if (e.target.id === 'modal-qr') $('#qr-cerrar').onclick(); };
+
+/* ─── Escarapelas: impresión con Chrome ─── */
+$('#btn-cargar').onclick = () => {
+  $('#lote-info').textContent = 'Cargando…';
+  llamar('lista', { evento: evento().codigo, filtro: $('#l-filtro').value, categoria: $('#l-cat').value }).then(r => {
+    E.lista = r.lista;
+    $('#lote-info').textContent = r.lista.length + ' escarapela(s) en la lista, ordenadas por color y nombre.';
+    $('#lote-acciones').classList.toggle('oculto', !r.lista.length);
+    $('#l-desde').value = 1; $('#l-hasta').value = Math.min(r.lista.length, 150);
+    if (r.lista.length) { $('#vista-previa').innerHTML = r.lista.slice(0, 3).map(p => htmlEtiqueta(p)).join(''); ajustarTextos($('#vista-previa')); }
+  }).catch(err => { $('#lote-info').textContent = err.message; });
+};
+function bloque() {
+  const d = Math.max(1, +$('#l-desde').value || 1), h = Math.min(E.lista.length, +$('#l-hasta').value || E.lista.length);
+  return E.lista.slice(d - 1, h);
+}
+$('#btn-imp-lote').onclick = () => { const b = bloque(); if (b.length) imprimir(b); };
+$('#btn-marcar-lote').onclick = () => {
+  const b = bloque(); if (!b.length) return;
+  marcar(b.map(p => p.id), 'impresa').then(() => {
+    const h = +$('#l-hasta').value;
+    $('#l-desde').value = h + 1; $('#l-hasta').value = Math.min(E.lista.length, h + 150);
+  });
+};
+$('#btn-prueba').onclick = () => imprimir([ejemplo()], true);
+
+/* ─── Dibujo de la escarapela (impresión con Chrome) ─── */
+const MM_PX = 96 / 25.4;
+function geometria() {
+  const e = E.cfg.etiqueta, W = +e.ancho_mm, H = +e.alto_mm, m = +e.margen_mm || 3;
+  const esc_ = Math.min(W, H) / 62;
+  const banda = e.mostrar_tipo ? Math.max(6, H * 0.13) : 0;
+  const idAlto = 3.2 * Math.max(.8, esc_);
+  const g = { W, H, m, banda, idAlto, esc: esc_, horizontal: W >= H };
+  if (g.horizontal) {
+    g.qr = Math.min(H - 2 * m - banda - idAlto, W * 0.36);
+    g.txt = { l: m, t: m, w: W - 3 * m - g.qr, h: H - 2 * m - banda };
+    g.qrPos = { l: W - m - g.qr, t: m + (H - 2 * m - banda - g.qr - idAlto) / 2 };
+  } else {
+    g.qr = Math.min(W - 2 * m, H * 0.36);
+    g.txt = { l: m, t: m, w: W - 2 * m, h: H - 3 * m - banda - g.qr - idAlto };
+    g.qrPos = { l: (W - g.qr) / 2, t: H - m - banda - idAlto - g.qr };
+  }
+  return g;
+}
+function estiloEtiqueta() {
+  const g = geometria();
+  $('#estilo-etiqueta').textContent =
+    '@page { size: ' + g.W + 'mm ' + g.H + 'mm; margin: 0; }\n' +
+    '.et { width: ' + g.W + 'mm; height: ' + g.H + 'mm; }\n' +
+    '@media print { html, body { width: ' + g.W + 'mm; } }';
+}
+function ejemplo() {
+  const ev = evento();
+  return { id: ev.codigo + 'X7K3M9'.slice(0, E.cfg.largoId), nombres: 'María Alejandra', apellidos: 'Rodríguez Castañeda', nombre: 'María Alejandra Rodríguez Castañeda',
+           institucion: 'Universidad Nacional de Colombia', tipo: 'Ponente', escarapelaId: 'AZU-001', estados: {}, datos: {} };
+}
+function svgQR(texto) {
+  const qr = qrcode(0, 'M'); qr.addData(texto); qr.make();
+  return qr.createSvgTag({ cellSize: 1, margin: 2, scalable: true });
+}
+function htmlEtiqueta(p, prueba) {
+  const e = E.cfg.etiqueta, g = geometria(), s = g.esc;
+  const pos = (o, extra) => 'left:' + o.l + 'mm;top:' + o.t + 'mm;' + (o.w ? 'width:' + o.w + 'mm;' : '') + (o.h ? 'height:' + o.h + 'mm;' : '') + (extra || '');
+  const partes = [];
+  partes.push('<div class="et-txt" style="' + pos(g.txt) + (g.horizontal ? '' : 'text-align:center;') + '" data-w="' + g.txt.w + '">' +
+    (e.mostrar_evento ? '<div class="et-evento" style="font-size:' + (7 * s).toFixed(1) + 'pt">' + esc(evento().nombre) + '</div>' : '') +
+    '<div class="et-nombre" data-max="' + (26 * s).toFixed(1) + '" data-min="' + (13 * s).toFixed(1) + '">' + esc(p.nombres) + '</div>' +
+    '<div class="et-apellido" data-max="' + (16 * s).toFixed(1) + '" data-min="' + (10 * s).toFixed(1) + '">' + esc(p.apellidos) + '</div>' +
+    (e.mostrar_institucion && p.institucion ? '<div class="et-inst" style="font-size:' + (9 * s).toFixed(1) + 'pt">' + esc(p.institucion) + '</div>' : '') +
+    '</div>');
+  partes.push('<div class="et-qr" style="' + pos({ l: g.qrPos.l, t: g.qrPos.t, w: g.qr, h: g.qr }) + '">' + svgQR(p.id) + '</div>');
+  partes.push('<div class="et-id" style="' + pos({ l: g.qrPos.l - 2, t: g.qrPos.t + g.qr, w: g.qr + 4, h: g.idAlto }) +
+    'font-size:' + (7 * Math.max(.8, s)).toFixed(1) + 'pt;line-height:' + g.idAlto + 'mm">' + esc(p.escarapelaId || p.id) + '</div>');
+  if (e.mostrar_tipo) partes.push('<div class="et-tipo" style="' + pos({ l: 0, t: g.H - g.banda, w: g.W, h: g.banda }) +
+    'font-size:' + (Math.min(11 * s, g.banda * 1.6)).toFixed(1) + 'pt">' + esc(p.tipo || '') + '</div>');
+  if (prueba) partes.push('<div style="left:1mm;top:.5mm;font-size:6pt">' + g.W + '×' + g.H + ' mm</div>');
+  return '<div class="et' + (prueba ? ' prueba' : '') + '">' + partes.join('') + '</div>';
+}
+const lienzo = document.createElement('canvas').getContext('2d');
+function ajustarTextos(raiz) {
+  raiz.querySelectorAll('.et-txt').forEach(caja => {
+    const anchoPx = (+caja.dataset.w) * MM_PX;
+    caja.querySelectorAll('[data-max]').forEach(el => {
+      const max = +el.dataset.max, min = +el.dataset.min;
+      lienzo.font = (el.classList.contains('et-nombre') ? 800 : 700) + ' ' + (max * 4 / 3) + 'px Arial';
+      const w = lienzo.measureText(el.textContent).width || 1;
+      el.style.fontSize = Math.max(min, Math.min(max, max * anchoPx / w * 0.97)).toFixed(1) + 'pt';
+    });
+  });
+}
+/** Solo dibuja e imprime; quien llama decide cómo marcar la escarapela. */
+function imprimir(lista, esPrueba) {
+  const zona = $('#zona-impresion');
+  zona.innerHTML = lista.map(p => htmlEtiqueta(p, esPrueba)).join('');
+  ajustarTextos(zona);
+  setTimeout(() => window.print(), 80);
+}
+window.addEventListener('afterprint', () => { $('#zona-impresion').innerHTML = ''; enfocar(); });
+
+$('#btn-salir').onclick = salir;
+iniciar();
+</script>
+</body>
+</html>
+</script>
+</body>
+</html>
